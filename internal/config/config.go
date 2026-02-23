@@ -16,6 +16,10 @@ type Config struct {
 	DatabaseURI string `env:"DATABASE_URI"`
 	// AccrualSystemAddress — адрес системы расчёта начислений баллов лояльности.
 	AccrualSystemAddress string `env:"ACCRUAL_SYSTEM_ADDRESS"`
+	// JWTSecretKey — секретный ключ для подписи JWT-токенов.
+	JWTSecretKey string `env:"JWT_SECRET_KEY" env-default:"supersecretkey"`
+	// PollInterval — интервал опроса системы начислений в секундах.
+	PollInterval int `env:"POLL_INTERVAL" env-default:"2"`
 }
 
 // NewConfig создаёт и возвращает конфигурацию сервиса.

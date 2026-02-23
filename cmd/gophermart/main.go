@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os/signal"
@@ -11,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/glebb1331/gophemart/internal/accrual"
+	"github.com/glebb1331/gophemart/internal/auth"
 	"github.com/glebb1331/gophemart/internal/config"
 	"github.com/glebb1331/gophemart/internal/handlers"
 	"github.com/glebb1331/gophemart/internal/middleware"
@@ -18,18 +20,26 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
 	cfg, err := config.NewConfig()
 	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
+		return fmt.Errorf("failed to load config: %w", err)
 	}
 
 	if cfg.DatabaseURI == "" {
-		log.Fatal("database URI is required")
+		return fmt.Errorf("database URI is required")
 	}
+
+	auth.SetSecret(cfg.JWTSecretKey)
 
 	store, err := storage.NewDatabaseStorage(cfg.DatabaseURI)
 	if err != nil {
-		log.Fatalf("failed to init storage: %v", err)
+		return fmt.Errorf("failed to init storage: %w", err)
 	}
 	defer store.Close()
 
@@ -55,7 +65,8 @@ func main() {
 
 	if cfg.AccrualSystemAddress != "" {
 		accrualClient := accrual.NewClient(cfg.AccrualSystemAddress)
-		worker := accrual.NewWorker(accrualClient, store)
+		pollInterval := time.Duration(cfg.PollInterval) * time.Second
+		worker := accrual.NewWorker(accrualClient, store, pollInterval)
 		go worker.Run(ctx)
 	}
 
@@ -78,7 +89,8 @@ func main() {
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("shutdown error: %v", err)
+		return fmt.Errorf("shutdown error: %w", err)
 	}
 	log.Println("server stopped")
+	return nil
 }

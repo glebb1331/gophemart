@@ -16,7 +16,12 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-const secretKey = "supersecretkey"
+var jwtSecret []byte
+
+// SetSecret устанавливает секретный ключ для подписи и валидации JWT-токенов.
+func SetSecret(secret string) {
+	jwtSecret = []byte(secret)
+}
 
 // GenerateToken создаёт JWT-токен для пользователя с указанным идентификатором.
 // Токен действителен 24 часа с момента создания.
@@ -29,7 +34,7 @@ func GenerateToken(userID int) (string, error) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secretKey))
+	return token.SignedString(jwtSecret)
 }
 
 // ParseToken проверяет и разбирает JWT-токен, возвращая данные пользователя.
@@ -39,7 +44,7 @@ func ParseToken(tokenString string) (*Claims, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
-		return []byte(secretKey), nil
+		return jwtSecret, nil
 	})
 	if err != nil {
 		return nil, err

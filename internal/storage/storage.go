@@ -151,25 +151,22 @@ func (s *DatabaseStorage) GetUserByLogin(ctx context.Context, login string) (int
 // Возвращает ErrOrderAlreadyUploadedByUser или ErrOrderAlreadyUploadedByOther
 // при дублировании номера заказа.
 func (s *DatabaseStorage) CreateOrder(ctx context.Context, userID int, orderNum string) error {
-	query := `INSERT INTO orders (user_id, number, status) VALUES ($1, $2, $3)`
-	_, err := s.db.ExecContext(ctx, query, userID, orderNum, StatusNew)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
-			var ownerID int
-			checkQuery := `SELECT user_id FROM orders WHERE number = $1`
-			err2 := s.db.QueryRowContext(ctx, checkQuery, orderNum).Scan(&ownerID)
-			if err2 != nil {
-				return err
-			}
-			if ownerID == userID {
-				return ErrOrderAlreadyUploadedByUser
-			}
-			return ErrOrderAlreadyUploadedByOther
+	var ownerID int
+	checkQuery := `SELECT user_id FROM orders WHERE number = $1`
+	err := s.db.QueryRowContext(ctx, checkQuery, orderNum).Scan(&ownerID)
+	if err == nil {
+		if ownerID == userID {
+			return ErrOrderAlreadyUploadedByUser
 		}
+		return ErrOrderAlreadyUploadedByOther
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
-	return nil
+
+	insertQuery := `INSERT INTO orders (user_id, number, status) VALUES ($1, $2, $3)`
+	_, err = s.db.ExecContext(ctx, insertQuery, userID, orderNum, StatusNew)
+	return err
 }
 
 // GetUserOrders возвращает список заказов пользователя, отсортированных по времени загрузки (DESC).

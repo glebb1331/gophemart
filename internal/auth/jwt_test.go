@@ -1,11 +1,17 @@
 package auth
 
 import (
+	"os"
 	"testing"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 )
+
+func TestMain(m *testing.M) {
+	SetSecret("testsecretkey")
+	os.Exit(m.Run())
+}
 
 func TestGenerateToken(t *testing.T) {
 	token, err := GenerateToken(42)
@@ -48,7 +54,7 @@ func TestParseToken_ExpiredToken(t *testing.T) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString([]byte(secretKey))
+	tokenStr, err := token.SignedString(jwtSecret)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

@@ -11,22 +11,24 @@ import (
 
 // Worker выполняет фоновый опрос системы начислений для обновления статусов заказов.
 type Worker struct {
-	client  *Client
-	storage storage.Storage
+	client       *Client
+	storage      storage.Storage
+	pollInterval time.Duration
 }
 
 // NewWorker создаёт воркер для фоновой обработки начислений.
-func NewWorker(client *Client, s storage.Storage) *Worker {
+func NewWorker(client *Client, s storage.Storage, pollInterval time.Duration) *Worker {
 	return &Worker{
-		client:  client,
-		storage: s,
+		client:       client,
+		storage:      s,
+		pollInterval: pollInterval,
 	}
 }
 
 // Run запускает цикл опроса системы начислений.
 // Блокирует выполнение до отмены контекста.
 func (w *Worker) Run(ctx context.Context) {
-	ticker := time.NewTicker(2 * time.Second)
+	ticker := time.NewTicker(w.pollInterval)
 	defer ticker.Stop()
 
 	for {

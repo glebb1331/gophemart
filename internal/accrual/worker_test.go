@@ -81,7 +81,7 @@ func TestWorker_ProcessOrders_Processed(t *testing.T) {
 	}
 
 	client := NewClient(server.URL)
-	w := NewWorker(client, mock)
+	w := NewWorker(client, mock, 2*time.Second)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -123,7 +123,7 @@ func TestWorker_ProcessOrders_Invalid(t *testing.T) {
 	}
 
 	client := NewClient(server.URL)
-	w := NewWorker(client, mock)
+	w := NewWorker(client, mock, 2*time.Second)
 	w.processOrders(context.Background())
 
 	mock.mu.Lock()
@@ -154,7 +154,7 @@ func TestWorker_ProcessOrders_Registered(t *testing.T) {
 	}
 
 	client := NewClient(server.URL)
-	w := NewWorker(client, mock)
+	w := NewWorker(client, mock, 2*time.Second)
 	w.processOrders(context.Background())
 
 	mock.mu.Lock()
@@ -181,7 +181,7 @@ func TestWorker_ProcessOrders_NoContent(t *testing.T) {
 	}
 
 	client := NewClient(server.URL)
-	w := NewWorker(client, mock)
+	w := NewWorker(client, mock, 2*time.Second)
 	w.processOrders(context.Background())
 
 	mock.mu.Lock()
@@ -207,7 +207,7 @@ func TestWorker_ProcessOrders_TooManyRequests(t *testing.T) {
 	}
 
 	client := NewClient(server.URL)
-	w := NewWorker(client, mock)
+	w := NewWorker(client, mock, 2*time.Second)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -225,14 +225,14 @@ func TestWorker_ProcessOrders_TooManyRequests(t *testing.T) {
 func TestWorker_ProcessOrders_EmptyList(t *testing.T) {
 	mock := &mockStorage{orders: nil}
 	client := NewClient("http://localhost:1")
-	w := NewWorker(client, mock)
+	w := NewWorker(client, mock, 2*time.Second)
 	w.processOrders(context.Background())
 }
 
 func TestWorker_Run_CancelContext(t *testing.T) {
 	mock := &mockStorage{}
 	client := NewClient("http://localhost:1")
-	w := NewWorker(client, mock)
+	w := NewWorker(client, mock, 2*time.Second)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
@@ -266,7 +266,7 @@ func TestWorker_ProcessOrders_Processing(t *testing.T) {
 	}
 
 	client := NewClient(server.URL)
-	w := NewWorker(client, mock)
+	w := NewWorker(client, mock, 2*time.Second)
 	w.processOrders(context.Background())
 
 	mock.mu.Lock()
